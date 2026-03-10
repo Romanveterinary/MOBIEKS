@@ -1,45 +1,8 @@
-name: Build Android APK
-
-on:
-  push:
-    branches: [ "main", "master" ]
-  workflow_dispatch: 
-
-jobs:
-  build:
-    runs-on: ubuntu-latest
-
-    steps:
-    - name: Checkout Repository
-      uses: actions/checkout@v4
-
-    - name: Setup Java
-      uses: actions/setup-java@v3
-      with:
-        distribution: 'zulu'
-        java-version: '17'
-
-    - name: Setup Flutter
-      uses: subosito/flutter-action@v2
-      with:
-        channel: 'stable'
-
-    - name: Setup Python
-      uses: actions/setup-python@v4
-      with:
-        python-version: '3.11'
-
-    - name: Install Tools
+- name: Build APK (Minimalist)
       run: |
-        pip install flet[all]
-        if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
-
-    - name: Build APK (Force Non-Interactive)
-      run: |
-        # Примусово приймаємо всі ліцензії Google
+        # Спочатку ліцензії (це пройшло успішно минулого разу)
         yes | flutter doctor --android-licenses
-        # Запускаємо збірку з детальним виводом (verbose), щоб бачити прогрес
-        # Використовуємо 'yes |', щоб пройти будь-які запити всередині Flet
-        yes | flet build apk --project-name vetai
-      env:
-        CI: true
+        
+        # Чиста збірка без жодних аргументів, крім типу
+        # Ми прибрали --project-name, щоб не провокувати помилку
+        flet build apk
