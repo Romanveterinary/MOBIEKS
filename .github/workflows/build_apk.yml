@@ -34,13 +34,19 @@ jobs:
         pip install flet[all]
         if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
 
-    - name: Build APK (Final Attempt)
+    - name: Build APK (The Ultimate Fix)
+      # Вимикаємо будь-які питання від системи
+      env:
+        CI: true
+        FLET_TELEMETRY_DISABLE: 1
       run: |
-        # Приймаємо ліцензії
+        # 1. Приймаємо ліцензії (це працює ідеально, ми це бачили)
         yes | flutter doctor --android-licenses
         
-        # Вказуємо шлях до проекту через крапку (-p .)
-        flet build apk -p .
+        # 2. Збираємо. 
+        # yes | - натисне Enter, якщо Flet раптом щось спитає.
+        # . (крапка в кінці) - вказує на поточну папку без жодних прапорців.
+        yes | flet build apk .
 
     - name: Upload APK Artifact
       uses: actions/upload-artifact@v4
@@ -49,4 +55,5 @@ jobs:
         path: |
           build/apk/*.apk
           build/flutter/build/app/outputs/flutter-apk/*.apk
+          build/app/outputs/flutter-apk/*.apk
         if-no-files-found: warn
