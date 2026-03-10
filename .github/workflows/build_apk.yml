@@ -1,4 +1,40 @@
-- name: Build APK (The Ultimate Fix)
+name: Build Android APK
+
+on:
+  push:
+    branches: [ "main", "master" ]
+  workflow_dispatch: 
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v4
+
+    - name: Setup Java
+      uses: actions/setup-java@v3
+      with:
+        distribution: 'zulu'
+        java-version: '17'
+
+    - name: Setup Flutter
+      uses: subosito/flutter-action@v2
+      with:
+        channel: 'stable'
+
+    - name: Setup Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+
+    - name: Install Tools
+      run: |
+        pip install flet[all]
+        if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+
+    - name: Build APK (The Ultimate Fix)
       env:
         CI: true
         FLET_TELEMETRY_DISABLE: 1
@@ -16,3 +52,13 @@
         
         # 4. Запускаємо збірку
         yes | flet build apk .
+
+    - name: Upload APK Artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: VetAI-Pro-APK
+        path: |
+          build/apk/*.apk
+          build/flutter/build/app/outputs/flutter-apk/*.apk
+          build/app/outputs/flutter-apk/*.apk
+        if-no-files-found: warn
