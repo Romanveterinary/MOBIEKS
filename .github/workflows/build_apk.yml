@@ -35,16 +35,18 @@ jobs:
     - name: Install Dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install flet[all] --upgrade
+        pip install "flet[all]" --upgrade
         if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
 
     - name: Build APK using Flet
       run: |
-        flet build apk --project-name "vetai" --product "VetAI Pro"
+        # Використовуємо максимально просту команду, щоб уникнути конфліктів версій
+        flet build apk --build-number 1 --build-version 1.0.0
 
     - name: Upload APK Artifact
       uses: actions/upload-artifact@v4
       with:
         name: VetAI-Pro-Android-APK
+        # Шукаємо APK у стандартній папці виводу Flet
         path: build/apk/*.apk
-        if-no-files-found: warn
+        if-no-files-found: error
