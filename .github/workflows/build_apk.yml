@@ -3,7 +3,7 @@ name: Build Android APK
 on:
   push:
     branches: [ "main", "master" ]
-  workflow_dispatch: # Дозволяє запускати збірку вручну кнопкою
+  workflow_dispatch: 
 
 jobs:
   build:
@@ -38,8 +38,12 @@ jobs:
       run: |
         flet build apk
 
+    - name: List files for debugging
+      run: find build -name "*.apk"
+
     - name: Upload APK Artifact
       uses: actions/upload-artifact@v4
       with:
         name: VetAI-Pro-Android-APK
-        path: build/apk/**/*.apk
+        path: build/**/*.apk
+        if-no-files-found: error
