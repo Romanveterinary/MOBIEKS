@@ -29,27 +29,27 @@ jobs:
       with:
         python-version: '3.11'
 
-    - name: Install Flet and Dependencies
+    - name: Install Dependencies
       run: |
-        pip install flet
+        python -m pip install --upgrade pip
+        pip install "flet[all]"
         if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
 
     - name: Accept Android Licenses
       run: yes | flutter doctor --android-licenses
 
-    - name: Bootstrap Flet Project
+    - name: Build APK (Standard Mode)
       run: |
-        # Ця команда створить структуру проєкту без запуску важкої збірки
-        flet create .
-
-    - name: Flutter Build APK
-      run: |
-        # Пряма команда Flutter — вона працює швидше і не висне
-        flutter build apk --release
+        # Використовуємо стандартну команду, але додаємо вихід у файл, 
+        # щоб бачити помилки, якщо вони будуть
+        flet build apk --app-name "VetAI"
 
     - name: Upload APK Artifact
       uses: actions/upload-artifact@v4
       with:
         name: VetAI-Pro-Android-APK
-        path: build/app/outputs/flutter-apk/app-release.apk
+        # Шукаємо у всіх можливих місцях, де Flet може залишити APK
+        path: |
+          build/apk/*.apk
+          build/app/outputs/flutter-apk/*.apk
         if-no-files-found: error
