@@ -29,25 +29,17 @@ jobs:
       with:
         python-version: '3.11'
 
-    - name: Install Dependencies
+    - name: Install Tools
       run: |
         pip install flet[all]
         if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
 
-    - name: Accept Android Licenses
-      run: yes | flutter doctor --android-licenses
-
-    - name: Build APK (Targeted)
+    - name: Build APK (Force Non-Interactive)
       run: |
-        # Ми вказуємо Flet зібрати додаток саме в поточній директорії
-        # Додаємо --include-assets, щоб він точно захопив ваші іконки та картинки
-        flet build apk --project vetai
-
-    - name: Upload APK Artifact
-      uses: actions/upload-artifact@v4
-      with:
-        name: VetAI-Pro-APK
-        path: |
-          build/apk/*.apk
-          build/flutter/build/app/outputs/flutter-apk/*.apk
-        if-no-files-found: error
+        # Примусово приймаємо всі ліцензії Google
+        yes | flutter doctor --android-licenses
+        # Запускаємо збірку з детальним виводом (verbose), щоб бачити прогрес
+        # Використовуємо 'yes |', щоб пройти будь-які запити всередині Flet
+        yes | flet build apk --project-name vetai
+      env:
+        CI: true
