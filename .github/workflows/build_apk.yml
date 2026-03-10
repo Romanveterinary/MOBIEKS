@@ -1,13 +1,8 @@
-- name: Build APK (The Final Stand)
+- name: Build APK (Manual)
       run: |
         # 1. Приймаємо ліцензії
         yes | flutter doctor --android-licenses
         
-        # 2. Очищуємо кеш Flutter (про всяк випадок)
-        flutter clean
-        
-        # 3. Примусово ініціалізуємо Flet проект у поточній папці
-        flet create . --project-name vetai
-        
-        # 4. Запускаємо збірку з прямим посиланням на поточну папку
-        flet build apk .
+        # 2. Просто запускаємо збірку. БЕЗ назв, БЕЗ крапок, БЕЗ створити.
+        # Flet за замовчуванням візьме назву папки репозиторію.
+        flet build apk
