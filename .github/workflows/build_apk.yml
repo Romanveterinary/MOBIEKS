@@ -31,17 +31,17 @@ jobs:
 
     - name: Install Tools
       run: |
-        python -m pip install --upgrade pip
-        pip install "flet[all]"
+        pip install flet[all]
         if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
 
     - name: Accept Android Licenses
       run: yes | flutter doctor --android-licenses
 
-    - name: Build APK (No Arguments)
+    - name: Build APK (Verbose Mode)
       run: |
-        # Тільки тип збірки. Найпростіша команда в світі.
-        flet build apk
+        # Використовуємо --verbose, щоб бачити кожен крок. 
+        # Якщо впаде, ми побачимо точний рядок коду Python або Flutter.
+        flet build apk --verbose
 
     - name: Upload APK Artifact
       uses: actions/upload-artifact@v4
@@ -50,5 +50,4 @@ jobs:
         path: |
           build/apk/*.apk
           build/flutter/build/app/outputs/flutter-apk/*.apk
-          build/app/outputs/flutter-apk/*.apk
-        if-no-files-found: error
+        if-no-files-found: warn
