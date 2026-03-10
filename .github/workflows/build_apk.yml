@@ -37,14 +37,19 @@ jobs:
     - name: Accept Android Licenses
       run: yes | flutter doctor --android-licenses
 
-    - name: Build APK
+    - name: Bootstrap Flet Project
       run: |
-        # Тільки одна команда, без зайвих параметрів
-        flet build apk
+        # Ця команда створить структуру проєкту без запуску важкої збірки
+        flet create .
+
+    - name: Flutter Build APK
+      run: |
+        # Пряма команда Flutter — вона працює швидше і не висне
+        flutter build apk --release
 
     - name: Upload APK Artifact
       uses: actions/upload-artifact@v4
       with:
         name: VetAI-Pro-Android-APK
-        path: build/apk/*.apk
+        path: build/app/outputs/flutter-apk/app-release.apk
         if-no-files-found: error
