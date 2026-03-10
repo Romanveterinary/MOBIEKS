@@ -1,8 +1,8 @@
-- name: Build APK (Minimalist)
+- name: Build APK (The Simple Way)
       run: |
-        # Спочатку ліцензії (це пройшло успішно минулого разу)
+        # 1. Приймаємо ліцензії (це важливо)
         yes | flutter doctor --android-licenses
         
-        # Чиста збірка без жодних аргументів, крім типу
-        # Ми прибрали --project-name, щоб не провокувати помилку
+        # 2. Тільки сама команда. Жодних --project-name, жодних --verbose.
+        # Flet автоматично знайде main.py в папці.
         flet build apk
