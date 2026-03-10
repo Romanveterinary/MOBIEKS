@@ -29,25 +29,33 @@ jobs:
       with:
         python-version: '3.11'
 
-    - name: Accept Android Licenses
-      run: yes | flutter doctor --android-licenses
-
-    - name: Install Dependencies
+    - name: Install Tools
       run: |
-        python -m pip install --upgrade pip
         pip install flet
         if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
 
-    - name: Build APK (Zero Config)
+    - name: Accept Android Licenses
+      run: yes | flutter doctor --android-licenses
+
+    - name: Step 1 - Generate Flutter Project
+      # Ми змушуємо Flet тільки створити папку проекту, без самої збірки
+      run: flet build apk --template android --no-output
+
+    - name: Step 2 - Flutter Pub Get
+      # Оновлюємо залежності всередині створеного проекту
       run: |
-        # Тільки чиста команда. Flet сам розбереться з назвою з вашого коду
-        flet build apk
+        cd build/flutter
+        flutter pub get
+
+    - name: Step 3 - Real Flutter Build
+      # Запускаємо пряму збірку, яка не висне і показує лог
+      run: |
+        cd build/flutter
+        flutter build apk --release
 
     - name: Upload APK Artifact
       uses: actions/upload-artifact@v4
       with:
-        name: VetAI-Pro-Android-APK
-        path: |
-          build/apk/*.apk
-          build/app/outputs/flutter-apk/*.apk
+        name: VetAI-Pro-APK
+        path: build/flutter/build/app/outputs/flutter-apk/app-release.apk
         if-no-files-found: error
