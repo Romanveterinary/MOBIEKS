@@ -81,12 +81,49 @@ def main(page: ft.Page):
             page.snack_bar.open = True
             page.update()
 
-        # ⚙️ НАЛАШТУВАННЯ API КЛЮЧА
+        # === МОБІЛЬНІ ШЛЯХИ ===
+        safe_dir = os.environ.get("FLET_APP_STORAGE", ".") 
+        DB_NAME = os.path.join(safe_dir, "vet_mobile.db")
+        PHOTOS_DIR = os.path.join(safe_dir, "photos")
+        DOWNLOADS_DIR = "/storage/emulated/0/Download"
+        CONFIG_FILE = os.path.join(safe_dir, "api_config.json") # <--- ТЕПЕР КЛЮЧ ЖИВЕ ТУТ!
+        
+        # Захист від відсутності прав на пам'ять
+        try:
+            if not os.path.exists(DOWNLOADS_DIR): 
+                DOWNLOADS_DIR = safe_dir
+        except:
+            DOWNLOADS_DIR = safe_dir
+            
+        try:
+            if not os.path.exists(PHOTOS_DIR): 
+                os.makedirs(PHOTOS_DIR, exist_ok=True)
+        except:
+            pass
+
+        # ⚙️ НАЛАШТУВАННЯ API КЛЮЧА (БЕЗ CLIENT_STORAGE)
         DEFAULT_API_KEY = "AIzaSyCoi5-6zcMFWW6aB5Gul6dPm5i1frn_EFI"
         
+        def get_api_key():
+            try:
+                if os.path.exists(CONFIG_FILE):
+                    with open(CONFIG_FILE, "r") as f:
+                        return json.load(f).get("api_key", DEFAULT_API_KEY)
+            except: pass
+            return DEFAULT_API_KEY
+
+        def save_api_key(e):
+            new_key = tf_api_key.value.strip()
+            try:
+                with open(CONFIG_FILE, "w") as f:
+                    json.dump({"api_key": new_key}, f)
+            except: pass
+            close_settings()
+            show_snack("✅ Ключ API успішно збережено!", "green")
+
         tf_api_key = ft.TextField(
             label="Google Gemini API Key",
-            value=page.client_storage.get("api_key") or DEFAULT_API_KEY, 
+            value=get_api_key(), 
             password=True,
             can_reveal_password=True,
             width=300
@@ -95,12 +132,6 @@ def main(page: ft.Page):
         def close_settings(e=None):
             dlg_settings.open = False
             page.update()
-
-        def save_api_key(e):
-            new_key = tf_api_key.value.strip()
-            page.client_storage.set("api_key", new_key) 
-            close_settings()
-            show_snack("✅ Ключ API успішно збережено!", "green")
 
         dlg_settings = ft.AlertDialog(
             title=ft.Text("⚙️ Налаштування API", weight="bold"),
@@ -115,31 +146,12 @@ def main(page: ft.Page):
         )
 
         def open_settings(e):
-            tf_api_key.value = page.client_storage.get("api_key") or DEFAULT_API_KEY
+            tf_api_key.value = get_api_key()
             page.dialog = dlg_settings
             dlg_settings.open = True
             page.update()
 
         btn_settings = ft.IconButton(icon=ft.icons.SETTINGS, icon_color="grey", tooltip="Налаштування ШІ", on_click=open_settings)
-
-        # === МОБІЛЬНІ ШЛЯХИ ===
-        safe_dir = os.environ.get("FLET_APP_STORAGE", ".") 
-        DB_NAME = os.path.join(safe_dir, "vet_mobile.db")
-        PHOTOS_DIR = os.path.join(safe_dir, "photos")
-        DOWNLOADS_DIR = "/storage/emulated/0/Download"
-        
-        # Захист від відсутності прав на пам'ять
-        try:
-            if not os.path.exists(DOWNLOADS_DIR): 
-                DOWNLOADS_DIR = safe_dir
-        except:
-            DOWNLOADS_DIR = safe_dir
-            
-        try:
-            if not os.path.exists(PHOTOS_DIR): 
-                os.makedirs(PHOTOS_DIR, exist_ok=True)
-        except:
-            pass # Якщо не можна створити папку, ігноруємо, щоб не впало
 
         # ІНІЦІАЛІЗАЦІЯ ФАЙЛОВИХ МЕНЕДЖЕРІВ
         fp_docs = ft.FilePicker()
@@ -178,7 +190,7 @@ def main(page: ft.Page):
         # ==========================================
         def ask_ai_opinion(image_paths, user_desc, organ):
             try:
-                current_api_key = page.client_storage.get("api_key") or DEFAULT_API_KEY
+                current_api_key = get_api_key()
                 url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={current_api_key}"
                 
                 parts = []
@@ -213,7 +225,7 @@ def main(page: ft.Page):
 
         def ask_ai_consultant_multimodal(question, chat_image_path=None):
             try:
-                current_api_key = page.client_storage.get("api_key") or DEFAULT_API_KEY
+                current_api_key = get_api_key()
                 url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={current_api_key}"
                 
                 lang_instruction = "Respond in English." if CURRENT_LANG[0] == "EN" else "Відповідай українською."
@@ -557,7 +569,7 @@ def main(page: ft.Page):
             h_batch = "Batch Info:" if is_en else "Інформація про партію:"
             
             h_humane = "Pre-slaughter & Humane Slaughter:" if is_en else "Передзабійне утримання та гуманний забій:"
-            h_humane_text = "Animals rested after transportation, fully calmed down, and were provided with unhindered access to drinking water. Kept on a starvation diet for 6 hours. The slaughter was carried out without the use of stress factors, in compliance with the requirements of humane treatment in accordance with the Law of Ukraine 'On the Protection of Animals from Cruelty' and current veterinary and sanitary rules." if is_en else "Тварини відпочили মেরামত после транспортування, повністю заспокоїлися та були забезпечені безперешкодним доступом до питної води. Витримані на голодній дієті протягом 6 годин. Забій проведено без застосування стресових факторів, з дотриманням вимог гуманного поводження відповідно до Закону України «Про захист тварин від жорстокого поводження» та чинних ветеринарно-санітарних правил."
+            h_humane_text = "Animals rested after transportation, fully calmed down, and were provided with unhindered access to drinking water. Kept on a starvation diet for 6 hours. The slaughter was carried out without the use of stress factors, in compliance with the requirements of humane treatment in accordance with the Law of Ukraine 'On the Protection of Animals from Cruelty' and current veterinary and sanitary rules." if is_en else "Тварини відпочили після транспортування, повністю заспокоїлися та були забезпечені безперешкодним доступом до питної води. Витримані на голодній дієті протягом 6 годин. Забій проведено без застосування стресових факторів, з дотриманням вимог гуманного поводження відповідно до Закону України «Про захист тварин від жорстокого поводження» та чинних ветеринарно-санітарних правил."
             
             h_cooling_title = "Movement of products:" if is_en else "Рух продукції:"
             h_cooling_text = "All suitable carcasses and offal are directed to the cooling chamber (temperature regime from 0 °C to +4 °C). Sale is allowed after complete cooling." if is_en else "Усі придатні туші та субпродукти направляються в камеру остигання (температурний режим від 0 °C до +4 °C). Реалізація дозволяється після повного охолодження."
