@@ -8,6 +8,8 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    # СТАВИМО ЖОРСТКИЙ ТАЙМЕР! Ніяких більше 6 годин.
+    timeout-minutes: 35 
 
     steps:
     - name: Checkout Repository
@@ -34,23 +36,13 @@ jobs:
         pip install flet[all]
         if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
 
-    - name: Build APK (The Ultimate Fix)
+    - name: Build APK (Diagnostic Mode)
       env:
         CI: true
-        FLET_TELEMETRY_DISABLE: 1
+        PYTHONUNBUFFERED: "1" # Примусово виводить усі логи в реальному часі!
+        FLET_DEBUG: "true"    # Вмикаємо режим діагностики
       run: |
-        # 1. Приймаємо ліцензії
         yes | flutter doctor --android-licenses
-        
-        # 2. ЖОРСТКО вимикаємо всю аналітику Google, яка вішає процес
-        flutter config --no-analytics
-        dart --disable-analytics
-        
-        # 3. Вимикаємо Gradle Daemon (щоб не висів у пам'яті сервера)
-        mkdir -p ~/.gradle
-        echo "org.gradle.daemon=false" >> ~/.gradle/gradle.properties
-        
-        # 4. Запускаємо збірку
         yes | flet build apk .
 
     - name: Upload APK Artifact
