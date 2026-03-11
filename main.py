@@ -3,11 +3,11 @@ import sqlite3
 from datetime import datetime
 import os
 import shutil
-import google.generativeai as genai
 import tempfile
 import json
 import time
 import base64
+import requests  # <-- НОВИЙ, ЛЕГКИЙ СПОСІБ ЗАПИТІВ
 
 # ==========================================
 # 📚 ПОВНА ОФЛАЙН БАЗА ДАНИХ (НАКАЗ 28 + НАКАЗ 1032)
@@ -167,46 +167,70 @@ def main(page: ft.Page):
             with open(path, "rb") as f: return "data:image/jpeg;base64," + base64.b64encode(f.read()).decode("utf-8")
         except: return ""
 
-    # --- ШІ-АГЕНТИ ---
+    # ==========================================
+    # 🤖 ЛЕГКІ ШІ-АГЕНТИ ЧЕРЕЗ REST API
+    # ==========================================
     def ask_ai_opinion(image_paths, user_desc, organ):
         try:
             current_api_key = page.client_storage.get("api_key") or DEFAULT_API_KEY
-            genai.configure(api_key=current_api_key)
+            url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={current_api_key}"
             
-            model = genai.GenerativeModel('gemini-2.5-flash', generation_config={"response_mime_type": "application/json"})
-            contents = []
+            parts = []
             for path in image_paths:
-                with open(path, "rb") as f: contents.append({'mime_type': 'image/jpeg', 'data': f.read()})
+                with open(path, "rb") as f:
+                    b64_data = base64.b64encode(f.read()).decode("utf-8")
+                    parts.append({"inline_data": {"mime_type": "image/jpeg", "data": b64_data}})
+            
             lang_instruction = "Обов'язково відповідай АНГЛІЙСЬКОЮ мовою (Respond in English)." if CURRENT_LANG[0] == "EN" else "Відповідай УКРАЇНСЬКОЮ мовою."
             prompt = f"""УВАГА: Ти — державний ветеринарно-санітарний експерт. Тобі ЗАБОРОНЕНО аналізувати фото, що не стосуються ветеринарії.
             Якщо фото не по темі - поверни JSON: {{"diagnosis": "БЛОКУВАННЯ", "analysis": "Запит не стосується ветеринарії.", "orders": "Відмова."}}
             Якщо по темі: Проаналізуй фото. Орган: {organ}. Опис: {user_desc}. База: Наказ №28.
             {lang_instruction}
             Поверни JSON: "diagnosis", "analysis", "orders"."""
-            contents.append(prompt)
-            response = model.generate_content(contents)
-            raw_text = response.text.strip().replace("```json", "").replace("```", "")
+            
+            parts.append({"text": prompt})
+            
+            payload = {
+                "contents": [{"parts": parts}],
+                "generationConfig": {"responseMimeType": "application/json"}
+            }
+            
+            resp = requests.post(url, json=payload, headers={"Content-Type": "application/json"})
+            if resp.status_code != 200:
+                return {"diagnosis": "Error API", "analysis": str(resp.text), "orders": "-"}
+                
+            raw_text = resp.json()["candidates"][0]["content"]["parts"][0]["text"]
+            raw_text = raw_text.strip().replace("```json", "").replace("```", "")
             return json.loads(raw_text)
-        except Exception as e: return {"diagnosis": "Error", "analysis": str(e), "orders": "-"}
+        except Exception as e: 
+            return {"diagnosis": "Error", "analysis": str(e), "orders": "-"}
 
     def ask_ai_consultant_multimodal(question, chat_image_path=None):
         try:
             current_api_key = page.client_storage.get("api_key") or DEFAULT_API_KEY
-            genai.configure(api_key=current_api_key)
+            url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={current_api_key}"
             
-            model = genai.GenerativeModel('gemini-2.5-flash')
-            contents = []
             lang_instruction = "Respond in English." if CURRENT_LANG[0] == "EN" else "Відповідай українською."
             prompt = f"Ти ветеринарний ШІ-Консультант. Допоможи лікарю з цим питанням: '{question}'. {lang_instruction}"
             
+            parts = []
             if chat_image_path and os.path.exists(chat_image_path):
                 prompt += " Також проаналізуй додане фото зразка."
                 with open(chat_image_path, "rb") as f:
-                    contents.append({'mime_type': 'image/jpeg', 'data': f.read()})
+                    b64_data = base64.b64encode(f.read()).decode("utf-8")
+                    parts.append({"inline_data": {"mime_type": "image/jpeg", "data": b64_data}})
             
-            contents.append(prompt)
-            return model.generate_content(contents).text
-        except Exception as e: return str(e)
+            parts.append({"text": prompt})
+            
+            payload = {"contents": [{"parts": parts}]}
+            resp = requests.post(url, json=payload, headers={"Content-Type": "application/json"})
+            
+            if resp.status_code != 200:
+                return f"Помилка API: {resp.text}"
+                
+            return resp.json()["candidates"][0]["content"]["parts"][0]["text"]
+        except Exception as e: 
+            return f"Помилка: {str(e)}"
 
     # --- КАМЕРА ДОКУМЕНТІВ ---
     doc_paths = {"vet": None, "waybill": None, "chain": None, "thermal": None}
