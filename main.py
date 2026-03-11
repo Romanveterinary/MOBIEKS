@@ -120,8 +120,7 @@ def main(page: ft.Page):
             label="Google Gemini API Key",
             value=get_api_key(), 
             password=True,
-            can_reveal_password=True,
-            width=300
+            can_reveal_password=True
         )
 
         def close_settings(e=None):
@@ -146,7 +145,6 @@ def main(page: ft.Page):
             dlg_settings.open = True
             page.update()
 
-        # БРОНЕБІЙНА КНОПКА ЗАМІСТЬ ІКОНКИ
         btn_settings = ft.TextButton("⚙️ ШІ-Ключ", on_click=open_settings)
 
         # ІНІЦІАЛІЗАЦІЯ ФАЙЛОВИХ МЕНЕДЖЕРІВ
@@ -379,7 +377,6 @@ def main(page: ft.Page):
                 c = sqlite3.connect(DB_NAME)
                 for r in c.execute("SELECT id, num, organ, status, diagnosis, photo FROM inspections WHERE shift_id=? ORDER BY num DESC", (active_shift["id"],)).fetchall():
                     
-                    # ЗАМІСТЬ ІКОНКИ - ТЕКСТОВИЙ ЕМОДЗІ
                     status_emoji = "✅" if "НОРМА" in r[3] or "NORMAL" in r[3] else "🛑"
                     photo_badge = f" 📸" if r[5] else ""
                     
@@ -443,7 +440,8 @@ def main(page: ft.Page):
             fp_photo.pick_files(allow_multiple=True)
 
         dlg_organ = ft.Dropdown(options=[ft.dropdown.Option(x) for x in ["Внутрішні органи", "Туша", "Голова"]], value="Внутрішні органи", width=200)
-        dlg_notes = ft.TextField(label="Опис (Description)", multiline=True, min_lines=2, max_lines=4, width=220)
+        # ТУТ ТЕЖ ЗРОБИЛИ ПОЛЕ ГУМОВИМ
+        dlg_notes = ft.TextField(label="Опис (Description)", multiline=True, min_lines=2, max_lines=4, expand=True)
         dlg_diagnosis = ft.TextField(label="Діагноз (Diagnosis)", color="red")
         dlg_ai = ft.TextField(label="Аналіз (Analysis)", multiline=True) 
         dlg_orders = ft.TextField(label="Дії за Наказом (Actions)", multiline=True, color="blue")
@@ -664,7 +662,9 @@ def main(page: ft.Page):
         # 🧠 ШІ-КОНСУЛЬТАНТ + ЗБЕРЕЖЕННЯ/ОЧИЩЕННЯ ЧАТУ
         # ==========================================
         chat_list = ft.ListView(height=400, spacing=10, auto_scroll=True) 
-        chat_input = ft.TextField(hint_text="Питання або опис фото...", multiline=True, min_lines=1, max_lines=3, width=220)
+        
+        # ТУТ МАГІЯ: expand=True замість жорсткої ширини
+        chat_input = ft.TextField(hint_text="Питання або опис фото...", multiline=True, min_lines=1, max_lines=3, expand=True)
         
         cur_chat_image_path = [None]
         img_chat_preview = ft.Image(src="", width=50, height=50, visible=False, fit="cover")
