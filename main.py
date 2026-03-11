@@ -88,18 +88,13 @@ def main(page: ft.Page):
         DOWNLOADS_DIR = "/storage/emulated/0/Download"
         CONFIG_FILE = os.path.join(safe_dir, "api_config.json") 
         
-        # Захист від відсутності прав на пам'ять
         try:
-            if not os.path.exists(DOWNLOADS_DIR): 
-                DOWNLOADS_DIR = safe_dir
-        except:
-            DOWNLOADS_DIR = safe_dir
+            if not os.path.exists(DOWNLOADS_DIR): DOWNLOADS_DIR = safe_dir
+        except: DOWNLOADS_DIR = safe_dir
             
         try:
-            if not os.path.exists(PHOTOS_DIR): 
-                os.makedirs(PHOTOS_DIR, exist_ok=True)
-        except:
-            pass
+            if not os.path.exists(PHOTOS_DIR): os.makedirs(PHOTOS_DIR, exist_ok=True)
+        except: pass
 
         # ⚙️ НАЛАШТУВАННЯ API КЛЮЧА
         DEFAULT_API_KEY = "AIzaSyCoi5-6zcMFWW6aB5Gul6dPm5i1frn_EFI"
@@ -151,7 +146,8 @@ def main(page: ft.Page):
             dlg_settings.open = True
             page.update()
 
-        btn_settings = ft.IconButton(icon="settings", icon_color="grey", tooltip="Налаштування ШІ", on_click=open_settings)
+        # БРОНЕБІЙНА КНОПКА ЗАМІСТЬ ІКОНКИ
+        btn_settings = ft.TextButton("⚙️ ШІ-Ключ", on_click=open_settings)
 
         # ІНІЦІАЛІЗАЦІЯ ФАЙЛОВИХ МЕНЕДЖЕРІВ
         fp_docs = ft.FilePicker()
@@ -383,8 +379,8 @@ def main(page: ft.Page):
                 c = sqlite3.connect(DB_NAME)
                 for r in c.execute("SELECT id, num, organ, status, diagnosis, photo FROM inspections WHERE shift_id=? ORDER BY num DESC", (active_shift["id"],)).fetchall():
                     
-                    icon_name = "check_circle" if "НОРМА" in r[3] or "NORMAL" in r[3] else "warning"
-                    icon_color = "green" if "НОРМА" in r[3] or "NORMAL" in r[3] else "red"
+                    # ЗАМІСТЬ ІКОНКИ - ТЕКСТОВИЙ ЕМОДЗІ
+                    status_emoji = "✅" if "НОРМА" in r[3] or "NORMAL" in r[3] else "🛑"
                     photo_badge = f" 📸" if r[5] else ""
                     
                     def make_edit_click(item_id):
@@ -393,11 +389,11 @@ def main(page: ft.Page):
                         return lambda e: trigger_delete(item_id)
 
                     lv_hist.controls.append(ft.Card(content=ft.ListTile(
-                        leading=ft.Icon(name=icon_name, color=icon_color), 
+                        leading=ft.Text(status_emoji, size=24), 
                         title=ft.Text(f"#{r[1]} | {r[2]}{photo_badge}", weight="bold"), subtitle=ft.Text(r[4] or r[3], size=12),
                         trailing=ft.Row([
-                            ft.IconButton(icon="edit", icon_color="blue", on_click=make_edit_click(r[0])),
-                            ft.IconButton(icon="delete", icon_color="red", on_click=make_delete_click(r[0]))
+                            ft.TextButton("✏️", on_click=make_edit_click(r[0])),
+                            ft.TextButton("🗑️", on_click=make_delete_click(r[0]))
                         ], alignment=ft.MainAxisAlignment.END, width=100)
                     )))
                 c.close()
@@ -494,7 +490,7 @@ def main(page: ft.Page):
                     dlg_organ,
                     ft.Row([ft.ElevatedButton("📷 ФОТО", on_click=trigger_pathology_photo), lbl_photo]),
                     row_photos,
-                    ft.Row([dlg_notes, ft.IconButton(icon="mic", icon_size=35, icon_color="blue", tooltip="Мікрофон", on_click=lambda e: dlg_notes.focus())]),
+                    ft.Row([dlg_notes, ft.TextButton("🎤", tooltip="Мікрофон", on_click=lambda e: dlg_notes.focus())]),
                     ft.Row([ft.ElevatedButton("🤖 ШІ", on_click=ask_ai_click, bgcolor="purple", color="white"), ft.ElevatedButton("⚡ ОФЛАЙН", on_click=ask_offline_orders_click, bgcolor="orange", color="black")], alignment=ft.MainAxisAlignment.SPACE_BETWEEN),
                     dlg_diagnosis, dlg_ai, dlg_orders
                 ], scroll=ft.ScrollMode.AUTO, spacing=10)
@@ -698,8 +694,8 @@ def main(page: ft.Page):
         def trigger_chat_picker(e):
             fp_chat_image.pick_files()
 
-        btn_chat_add_photo = ft.IconButton(icon="add_a_photo", icon_color="purple", icon_size=30, on_click=trigger_chat_picker)
-        btn_clear_chat_img = ft.IconButton(icon="cancel", icon_color="red", visible=False, on_click=clear_chat_image)
+        btn_chat_add_photo = ft.TextButton("📷 Фото", on_click=trigger_chat_picker)
+        btn_clear_chat_img = ft.TextButton("❌", visible=False, on_click=clear_chat_image)
 
         def send_chat(e):
             user_msg = chat_input.value
@@ -799,8 +795,8 @@ def main(page: ft.Page):
             show_snack(f"✅ Чат збережено: {os.path.basename(export_path)}", "green")
 
         lbl_ai_title = ft.Text("🤖 ШІ-Консультант", weight="bold", color="purple")
-        btn_clear_chat = ft.IconButton(icon="delete_sweep", icon_color="red", tooltip="Очистити чат", on_click=clear_chat_history)
-        btn_export_chat = ft.IconButton(icon="save_alt", icon_color="blue", tooltip="Зберегти діалог у файл", on_click=export_chat_to_html)
+        btn_clear_chat = ft.TextButton("🧹 Очистити", on_click=clear_chat_history)
+        btn_export_chat = ft.TextButton("💾 Зберегти", on_click=export_chat_to_html)
         
         # Групуємо кнопки збереження і очищення разом
         row_chat_header = ft.Row([lbl_ai_title, ft.Row([btn_clear_chat, btn_export_chat])], alignment=ft.MainAxisAlignment.SPACE_BETWEEN)
@@ -825,8 +821,8 @@ def main(page: ft.Page):
             ft.Row([
                 btn_chat_add_photo,
                 chat_input, 
-                ft.IconButton(icon="mic", icon_size=30, icon_color="blue", tooltip="Голос", on_click=lambda e: chat_input.focus()), 
-                ft.IconButton(icon="send", icon_color="green", icon_size=30, on_click=send_chat)
+                ft.TextButton("🎤", on_click=lambda e: chat_input.focus()), 
+                ft.ElevatedButton("➡️", on_click=send_chat, bgcolor="green", color="white")
             ], alignment=ft.MainAxisAlignment.SPACE_BETWEEN)
         ], visible=False)
         
