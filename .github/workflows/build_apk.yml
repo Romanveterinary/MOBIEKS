@@ -8,7 +8,6 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-    # СТАВИМО ЖОРСТКИЙ ТАЙМЕР! Ніяких більше 6 годин.
     timeout-minutes: 35 
 
     steps:
@@ -24,6 +23,7 @@ jobs:
     - name: Setup Flutter
       uses: subosito/flutter-action@v2
       with:
+        flutter-version: '3.22.2' # <--- ОСЬ НАШ РЯТІВНИК! Фіксуємо версію.
         channel: 'stable'
 
     - name: Setup Python
@@ -36,11 +36,9 @@ jobs:
         pip install flet[all]
         if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
 
-    - name: Build APK (Diagnostic Mode)
+    - name: Build APK
       env:
         CI: true
-        PYTHONUNBUFFERED: "1" # Примусово виводить усі логи в реальному часі!
-        FLET_DEBUG: "true"    # Вмикаємо режим діагностики
       run: |
         yes | flutter doctor --android-licenses
         yes | flet build apk .
